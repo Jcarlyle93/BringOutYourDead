@@ -1,0 +1,7 @@
+## Interface: 11302
+## Title: Bring Out Your Dead
+## Notes: An AddOn to fetch and track guild information regarding deaths and allow you to remove them.
+## Created by: Indelible - Nek'Rosh
+## Discord: indelible
+## SavedVariables: bringOutYourDeadList
+BringOutYourDead.lua
