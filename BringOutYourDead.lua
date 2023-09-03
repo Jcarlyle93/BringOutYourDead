@@ -59,6 +59,17 @@ SlashCmdList["SHOWDEAD"] = function()
     end
 end
 
+local function IsPlayerOnline(playerName)
+    GuildRoster() -- Refresh the guild roster data
+    for i = 1, GetNumGuildMembers() do
+        local name, _, _, _, _, _, _, _, isOnline = GetGuildRosterInfo(i)
+        if name == playerName then
+            return isOnline
+        end
+    end
+    return false
+end
+
 function BringOutYourDead_CreateMacro()
 
     local macroIndex = GetMacroIndexByName("GuildRemoveDead")
@@ -68,10 +79,9 @@ function BringOutYourDead_CreateMacro()
     for _, player in ipairs(bringOutYourDeadList) do
         macroContent = macroContent .. "/gremove " .. player .. "\n"
         -- Debug: print the player name we're trying to whisper to
-        print("Trying to whisper to:", playerName)
-        
-        -- Send a whisper to the player
-        SendChatMessage("Nice try! - Go again and PM me for a ginv!", "WHISPER", nil, playerName)
+        if IsPlayerOnline(playerName) then
+            SendChatMessage("Nice try! - Go again and PM me for a ginv!", "WHISPER", nil, playerName)
+        end
     end
 
     macroContent = macroContent ..  "/script BringOutYourDead_ClearList()"
@@ -95,16 +105,19 @@ end
 local function OnAddonMessageReceived(prefix, message, channel, sender)
     if prefix == COMM_PREFIX and channel == "GUILD" then
         if message == "REQUEST_DATA" then
-            if bringOutYourDeadList then
+            if bringOutYourDeadList and bringOutYourDeadList.timestamp then
                 local dataString = table.concat(bringOutYourDeadList, ",")
-                C_ChatInfo.SendAddonMessage(COMM_PREFIX, "DATA:" .. dataString, "WHISPER", sender)
+                C_ChatInfo.SendAddonMessage(COMM_PREFIX, "DATA:" .. dataString .. "|TIMESTAMP:" .. bringOutYourDeadList.timestamp, "WHISPER", sender)
             end
         elseif string.sub(message, 1, 5) == "DATA:" then
-            local theirList = {strsplit(",", string.sub(message, 6))}
-            for _, name in ipairs(theirList) do
-                if not tContains(bringOutYourDeadList, name) then
-                    table.insert(bringOutYourDeadList, name)
-                end
+            local dataList, timestamp = strsplit("|TIMESTAMP:", message)
+            local theirList = {strsplit(",", string.sub(dataList, 6))}
+            local theirTimestamp = tonumber(timestamp)
+            
+            -- Check if their timestamp is more recent
+            if not bringOutYourDeadList.timestamp or theirTimestamp > bringOutYourDeadList.timestamp then
+                bringOutYourDeadList = theirList
+                bringOutYourDeadList.timestamp = theirTimestamp
             end
         end
     end
