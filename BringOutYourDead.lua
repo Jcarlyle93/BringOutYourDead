@@ -60,14 +60,20 @@ SlashCmdList["SHOWDEAD"] = function()
 end
 
 local function IsPlayerOnline(playerName)
-    GuildRoster() -- Refresh the guild roster data
-    for i = 1, GetNumGuildMembers() do
-        local name, _, _, _, _, _, _, _, isOnline = GetGuildRosterInfo(i)
-        if name == playerName then
-            return isOnline
+    GuildRoster() -- Request an update of the guild info
+    C_Timer.After(1, function() -- Wait for a short delay
+        for i = 1, GetNumGuildMembers() do
+            local fullName, _, _, _, _, _, _, _, online = GetGuildRosterInfo(i)
+            local name, realm = strsplit("-", fullName) -- Split name and realm
+            if name == playerName then
+                if online then
+                    SendChatMessage("Nice try! - Go again and PM me for a ginv!", "WHISPER", nil, playerName)
+                else
+                    return
+                end
+            end
         end
-    end
-    return false
+    end)
 end
 
 function BringOutYourDead_CreateMacro()
@@ -79,9 +85,7 @@ function BringOutYourDead_CreateMacro()
     for _, player in ipairs(bringOutYourDeadList) do
         macroContent = macroContent .. "/gremove " .. player .. "\n"
         -- Debug: print the player name we're trying to whisper to
-        if IsPlayerOnline(playerName) then
-            SendChatMessage("Nice try! - Go again and PM me for a ginv!", "WHISPER", nil, playerName)
-        end
+        IsPlayerOnline(player)
     end
 
     macroContent = macroContent ..  "/script BringOutYourDead_ClearList()"
