@@ -76,6 +76,31 @@ local function IsPlayerOnline(playerName)
     end)
 end
 
+-- Function to check if a player is still in the guild
+local function IsPlayerInGuild(playerName)
+    for i = 1, GetNumGuildMembers() do
+        local name = GetGuildRosterInfo(i)
+        local cleanName = strsplit("-", name) -- If names are "Name-Realm", this gets just "Name"
+        if cleanName == playerName then
+            return true
+        end
+    end
+    return false
+end
+
+-- Handle the GUILD_ROSTER_UPDATE event
+local function OnGuildRosterUpdate()
+    local i = 1
+    while i <= #bringOutYourDeadList do
+        local playerName = bringOutYourDeadList[i]
+        if not IsPlayerInGuild(playerName) then
+            table.remove(bringOutYourDeadList, i) -- remove player from the list
+        else
+            i = i + 1
+        end
+    end
+end
+
 function BringOutYourDead_CreateMacro()
 
     local macroIndex = GetMacroIndexByName("GuildRemoveDead")
@@ -140,9 +165,12 @@ frame:SetScript("OnEvent", function(self, event, ...)
         RequestData()
     elseif event == "GUILD_MEMBER_DIED" then
         OnGuildMemberDiedEvent(self, event, ...)
+    elseif event == "GUILD_ROSTER_UPDATE" then
+        OnGuildRosterUpdate()
     end
 end)
 
+frame:RegisterEvent("GUILD_ROSTER_UPDATE")
 frame:RegisterEvent("GUILD_MEMBER_DIED")
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("PLAYER_LOGIN")
