@@ -2,6 +2,8 @@ local COMM_PREFIX = "BOYD_SYNC"
 local frame = CreateFrame("Frame")
 
 bringOutYourDeadList = bringOutYourDeadList or {}
+-- Define default message
+local defaultWhisperMessage = "Nice try! - Go again and PM me for a ginv!"
 
 local function ensureList()
     if not bringOutYourDeadList then
@@ -26,12 +28,39 @@ local function SetupButtonScripts()
     end
 end
 
-SLASH_TESTADD1 = "/testadd"
-SlashCmdList["TESTADD"] = function()
-    ensureList()
-    table.insert(bringOutYourDeadList, "TestName")
-    print("Added TestName to the list.")
+-- Slash Commands
+SLASH_SHOWDEAD1 = "/showdead"
+SlashCmdList["SHOWDEAD"] = function()
+    print("Ready to kick: ", #bringOutYourDeadList)
+    if bringOutYourDeadList then
+        for _, playerName in ipairs(bringOutYourDeadList) do
+            print(playerName)
+        end
+    end
 end
+
+SLASH_BRINGOUTYOURDEAD1 = "/boyd"
+SlashCmdList["BRINGOUTYOURDEAD"] = function(msg)
+    local command, rest = msg:match("^(%S*)%s*(.-)$")
+    command = command:lower()
+    
+    if command == "setwhisper" then
+        if rest ~= "" then
+            BringOutYourDeadDB.whisperMessage = rest
+            print("Whisper message set to: " .. rest)
+        else
+            print("Please specify the whisper message after the command.")
+        end
+    elseif command == "resetwhisper" then
+        BringOutYourDeadDB.whisperMessage = defaultWhisperMessage
+        print("Whisper message reset to default.")
+    else
+        print("Commands for BringOutYourDead:")
+        print("/boyd setwhisper [your message] - Set the whisper message")
+        print("/boyd resetwhisper - Reset whisper message to default")
+    end
+end
+
 
 local function OnGuildMemberDiedEvent(self, event, playerName)
     ensureList()
@@ -49,25 +78,16 @@ function CreateOrUpdateMacro(macroName, macroBody)
     end
 end
 
-SLASH_SHOWDEAD1 = "/showdead"
-SlashCmdList["SHOWDEAD"] = function()
-    print("Ready to kick: ", #bringOutYourDeadList)
-    if bringOutYourDeadList then
-        for _, playerName in ipairs(bringOutYourDeadList) do
-            print(playerName)
-        end
-    end
-end
-
 local function IsPlayerOnline(playerName)
     GuildRoster() -- Request an update of the guild info
+    local message = BringOutYourDeadDB.whisperMessage
     C_Timer.After(1, function() -- Wait for a short delay
         for i = 1, GetNumGuildMembers() do
             local fullName, _, _, _, _, _, _, _, online = GetGuildRosterInfo(i)
             local name, realm = strsplit("-", fullName) -- Split name and realm
             if name == playerName then
                 if online then
-                    SendChatMessage("Nice try! - Go again and PM me for a ginv!", "WHISPER", nil, playerName)
+                    SendChatMessage(message, "WHISPER", nil, playerName)
                 else
                     return
                 end
@@ -157,6 +177,12 @@ frame:SetScript("OnEvent", function(self, event, ...)
         local addonName = ...
         if addonName == "BringOutYourDead" then
             bringOutYourDeadList = bringOutYourDeadList or {}
+            if not BringOutYourDeadDB then
+                BringOutYourDeadDB = {
+                    whisperMessage = defaultWhisperMessage
+                }
+            end
+            BringOutYourDeadDB.whisperMessage = BringOutYourDeadDB.whisperMessage or defaultWhisperMessage
             SetupButtonScripts()
         end
     elseif event == "CHAT_MSG_ADDON" then
