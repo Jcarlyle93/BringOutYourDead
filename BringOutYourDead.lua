@@ -178,9 +178,10 @@ frame:SetScript("OnEvent", function(self, event, ...)
         if addonName == "BringOutYourDead" then
             bringOutYourDeadList = bringOutYourDeadList or {}
             if not BringOutYourDeadDB then
-                BringOutYourDeadDB = {
-                    whisperMessage = defaultWhisperMessage
-                }
+                BringOutYourDeadDB = {}
+            end
+            if not BringOutYourDeadDB.whisperMessage then
+                BringOutYourDeadDB.whisperMessage = "Nice try! - Go again and PM me for a ginv!"
             end
             BringOutYourDeadDB.whisperMessage = BringOutYourDeadDB.whisperMessage or defaultWhisperMessage
             SetupButtonScripts()
@@ -214,10 +215,8 @@ BringOutYourDeadMacroButton:SetText("Create Macro")
 BringOutYourDeadMacroButton:SetMovable(true)
 BringOutYourDeadMacroButton:EnableMouse(true)
 BringOutYourDeadMacroButton:RegisterForDrag("RightButton")
-
 BringOutYourDeadMacroButton:SetScript("OnDragStart", BringOutYourDeadMacroButton.StartMoving)
 BringOutYourDeadMacroButton:SetScript("OnDragStop", BringOutYourDeadMacroButton.StopMovingOrSizing)
-
 BringOutYourDeadMacroButton:SetScript("OnClick", function(self, button)
     if button == "LeftButton" then -- Check if it's a left click
         BringOutYourDead_CreateMacro()
